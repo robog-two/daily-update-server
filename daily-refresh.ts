@@ -51,14 +51,15 @@ async function embedOneSet() {
       console.log(` -> ${link}`)
       const newEmbed: Embed | undefined = await (await fetch(`${isProd() ? 'https://proxy.wishlily.app' : 'http://localhost:8080'}/generic/product?id=${encodeURIComponent(link)}`)).json() as Embed | undefined
       if (newEmbed) {
-        const { link, title, price, cover } = newEmbed
+        const { title, price, cover } = newEmbed
 
         if (link) {
+          console.log(newEmbed)
           mongo.database('wishlily').collection(`products`).updateOne(
             { link },
             {
               $set: {
-                link,
+                link: newEmbed?.link,
                 title,
                 price,
                 cover
