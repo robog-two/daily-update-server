@@ -1,6 +1,8 @@
 import { connect as getMongo } from './mongo.ts'
 import { isProd } from './isprod.ts'
 
+if (isProd()) console.log('Environment is production.')
+
 let lastStart = 0
 let queue: Array<string | undefined> = []
 const mongo = await getMongo()
