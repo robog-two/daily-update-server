@@ -59,12 +59,12 @@ async function embedOneSet() {
   let tries = 0
   queue = (await Promise.all(queue.map(async (link) => {
     try {
+      if (!link) return link
       if (tries > 5) {
         return link
       } else {
         tries++
       }
-      if (!link) return link
       let url: URL | undefined
       try {
         url = new URL(link)
