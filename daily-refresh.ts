@@ -56,8 +56,14 @@ async function embedOneSet() {
   }
 
   const domains: Array<string> = []
+  let tries = 0
   queue = (await Promise.all(queue.map(async (link) => {
     try {
+      if (tries > 5) {
+        return link
+      } else {
+        tries++
+      }
       if (!link) return link
       let url: URL | undefined
       try {
