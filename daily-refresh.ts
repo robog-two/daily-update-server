@@ -35,41 +35,47 @@ async function embedOneSet() {
 
   const domains: Array<string> = []
   queue = (await Promise.all(queue.map(async (link) => {
-    if (!link) return link
-    let url: URL | undefined
     try {
-      url = new URL(link)
-    } catch (e) {
-      console.log(e)
-    }
-    if (!url) return link
-
-    if (domains.includes(url.host)) {
-      return link
-    } else {
-      domains.push(url.host)
-      console.log(` -> ${link}`)
-      const newEmbed: Embed | undefined = await (await fetch(`${isProd() ? 'https://proxy.wishlily.app' : 'http://localhost:8080'}/generic/product?id=${encodeURIComponent(link)}`)).json() as Embed | undefined
-      if (newEmbed) {
-        const { title, price, cover } = newEmbed
-
-        if (link) {
-          console.log(newEmbed)
-          mongo.database('wishlily').collection(`products`).updateOne(
-            { link },
-            {
-              $set: {
-                link: newEmbed?.link,
-                title,
-                price,
-                cover
-              }
-            },
-            { upsert: true, }
-          )
-        }
+      if (!link) return link
+      let url: URL | undefined
+      try {
+        url = new URL(link)
+      } catch (e) {
+        console.log(e)
       }
+      if (!url) return link
 
+      if (domains.includes(url.host)) {
+        return link
+      } else {
+        domains.push(url.host)
+        console.log(` -> ${link}`)
+        const newEmbed: Embed | undefined = await (await fetch(`${isProd() ? 'https://proxy.wishlily.app' : 'http://localhost:8080'}/generic/product?id=${encodeURIComponent(link)}`)).json() as Embed | undefined
+        if (newEmbed) {
+          const { title, price, cover } = newEmbed
+
+          if (link) {
+            console.log(newEmbed)
+            mongo.database('wishlily').collection(`products`).updateOne(
+              { link },
+              {
+                $set: {
+                  link: newEmbed?.link,
+                  title,
+                  price,
+                  cover
+                }
+              },
+              { upsert: true, }
+            )
+          }
+        }
+
+        return undefined
+      }
+    } catch (e) {
+      console.error(e)
+      // We'll try again tomorrow
       return undefined
     }
   }))).filter(it => it !== undefined)
