@@ -8,11 +8,31 @@ let queue: Array<string | undefined> = []
 const mongo = await getMongo()
 const products = await mongo.database('wishlily').collection('products')
 
+function shuffle(array) {
+  let currentIndex = array.length,  randomIndex;
+
+  // While there remain elements to shuffle.
+  while (currentIndex != 0) {
+
+    // Pick a remaining element.
+    randomIndex = Math.floor(Math.random() * currentIndex);
+    currentIndex--;
+
+    // And swap it with the current element.
+    [array[currentIndex], array[randomIndex]] = [
+      array[randomIndex], array[currentIndex]];
+  }
+
+  return array;
+}
+
 interface Embed {
   link: string | undefined
   title: string | undefined
   price: string | undefined
   cover: string | undefined
+  message: string | undefined
+  success: boolean | undefined
 }
 
 async function embedOneSet() {
@@ -31,6 +51,8 @@ async function embedOneSet() {
         queue.push(it.link)
       }
     })
+
+    queue = shuffle(queue)
   }
 
   const domains: Array<string> = []
@@ -51,6 +73,11 @@ async function embedOneSet() {
         domains.push(url.host)
         console.log(` -> ${link}`)
         const newEmbed: Embed | undefined = await (await fetch(`${isProd() ? 'https://proxy.wishlily.app' : 'http://localhost:8080'}/generic/product?id=${encodeURIComponent(link)}`)).json() as Embed | undefined
+        if (newEmbed?.success == false && newEmbed?.message == 'Rate limit exceeded. Try again in 5 minutes.') {
+          // If we're rate limited (likely bc people are slammin the api)
+          // wait 5 minutes and try again
+          return link
+        }
         if (newEmbed) {
           const { title, price, cover } = newEmbed
 
@@ -81,6 +108,6 @@ async function embedOneSet() {
   }))).filter(it => it !== undefined)
 }
 
-// This stuff should run every five minutes!
-setInterval(embedOneSet, 300000)
+// This stuff should run every five minutes + 10 sec
+setInterval(embedOneSet, 310000)
 embedOneSet()
